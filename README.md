@@ -16,13 +16,19 @@ The upstream plugin code is fetched at build time — this repo contains only yo
 
 **1. Fork this repo** and clone it locally.
 
-**2. Set your plugin name** — replace `acme-appsec` in three places:
+**2. Set up CI for your platform** — run one of:
+
+```bash
+make ci-github   # copies ci-templates/github/workflows/package.yml → .github/workflows/
+make ci-gitlab   # copies ci-templates/gitlab-ci.yml → .gitlab-ci.yml
+```
+
+Then replace `acme-appsec` in two places:
 
 | File | What to change |
 |---|---|
 | `Makefile` | `INTERNAL_NAME ?= acme-appsec` |
-| `.github/workflows/package.yml` | `INTERNAL_NAME: ... \|\| 'acme-appsec'` |
-| `.gitlab-ci.yml` | `INTERNAL_NAME: "acme-appsec"` |
+| `.github/workflows/package.yml` or `.gitlab-ci.yml` | `INTERNAL_NAME` variable |
 
 **3. Edit your org profile** in `org-profile/org-profile.yaml` — only three fields are required:
 - `organization.id` — a short lowercase identifier, e.g. `acme`
@@ -52,7 +58,7 @@ claude --plugin-dir build/your-plugin-name
 /your-plugin-name:create-threat-model
 ```
 
-That's it. For CI, tagging a release triggers the included GitHub Actions / GitLab CI pipeline automatically.
+That's it. For CI, tagging a release triggers the pipeline set up in step 2 automatically.
 
 ## Customization
 
@@ -98,7 +104,9 @@ dist/acme-appsec-<version>.tgz.sha256
 
 ## CI
 
-Both CI pipelines do the same as the local build: fetch upstream, build, smoke test, and upload the `.tgz` with its `.sha256` as a build artifact. The pipeline triggers on `v*` tags and `workflow_dispatch`.
+Run `make ci-github` or `make ci-gitlab` to install the CI pipeline for your platform (see Quick Start step 2). Both do the same as the local build: fetch upstream, build, smoke test, and upload the `.tgz` with its `.sha256` as a build artifact. The pipeline triggers on `v*` tags and `workflow_dispatch`.
+
+The templates live in `ci-templates/` — edit them there before running `make ci-*` if you need to customize the pipeline.
 
 | Variable | Default | Description |
 |---|---|---|
