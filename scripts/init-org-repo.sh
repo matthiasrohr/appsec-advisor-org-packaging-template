@@ -49,6 +49,12 @@ PLUGIN_NAME=$(ask "Plugin name (Claude Code command prefix)" "${ORG_ID}-appsec")
 OWNER=$(ask "Team owner (e.g. AppSec Team)" "${ORG_NAME} AppSec Team")
 TARGET_DIR=$(ask "Target directory" "./${PLUGIN_NAME}-packaging")
 
+read -r -p "Copy example requirements.yaml into org-profile/? [y/N]: " _req_reply
+case "${_req_reply}" in
+  [yY]*) COPY_REQUIREMENTS=true ;;
+  *)     COPY_REQUIREMENTS=false ;;
+esac
+
 echo ""
 
 # ── Source files ──────────────────────────────────────────────────────────────
@@ -101,6 +107,11 @@ cp "${TEMPLATE_BASE}/.gitignore" "${TARGET_DIR}/.gitignore"
 cp "${TEMPLATE_BASE}/org-profile/package-policy.yaml" \
    "${TARGET_DIR}/org-profile/package-policy.yaml"
 
+if [ "${COPY_REQUIREMENTS}" = true ]; then
+  cp "${TEMPLATE_BASE}/org-profile/requirements-example.yaml" \
+     "${TARGET_DIR}/org-profile/requirements.yaml"
+fi
+
 # ── Render Makefile ───────────────────────────────────────────────────────────
 
 E_PLUGIN=$(sed_escape "${PLUGIN_NAME}")
@@ -113,13 +124,27 @@ TODAY="$(date +%Y.%m.1)"
 E_ORG_ID=$(sed_escape "${ORG_ID}")
 E_ORG_NAME=$(sed_escape "${ORG_NAME}")
 E_OWNER=$(sed_escape "${OWNER}")
-sed \
-  -e "s/id: acme/id: ${E_ORG_ID}/" \
-  -e "s/name: Acme Corp/name: ${E_ORG_NAME}/" \
-  -e "s/profile_version: \"2026.06.1\"/profile_version: \"${TODAY}\"/" \
-  -e "s/owner: Acme AppSec Team/owner: ${E_OWNER}/" \
-  -e "s/label: \"Acme Corp AppSec Requirements\"/label: \"${E_ORG_NAME} AppSec Requirements\"/" \
-  "${TEMPLATE_BASE}/org-profile/org-profile.yaml" > "${TARGET_DIR}/org-profile/org-profile.yaml"
+E_LABEL=$(sed_escape "${ORG_NAME} AppSec Requirements")
+
+if [ "${COPY_REQUIREMENTS}" = true ]; then
+  sed \
+    -e "s/id: acme/id: ${E_ORG_ID}/" \
+    -e "s/name: Acme Corp/name: ${E_ORG_NAME}/" \
+    -e "s/profile_version: \"2026.06.1\"/profile_version: \"${TODAY}\"/" \
+    -e "s/owner: Acme AppSec Team/owner: ${E_OWNER}/" \
+    -e "s|requirements_yaml_url: \"https://security.example.internal/appsec-requirements.yaml\"|requirements_yaml_url: \"file://org-profile/requirements.yaml\"|" \
+    -e "s|human_source_url: \"https://security.example.internal/appsec/requirements\"|human_source_url: \"# TODO: add URL to hosted requirements catalog\"|" \
+    -e "s/label: \"Acme Corp AppSec Requirements\"/label: \"${E_LABEL}\"/" \
+    "${TEMPLATE_BASE}/org-profile/org-profile.yaml" > "${TARGET_DIR}/org-profile/org-profile.yaml"
+else
+  sed \
+    -e "s/id: acme/id: ${E_ORG_ID}/" \
+    -e "s/name: Acme Corp/name: ${E_ORG_NAME}/" \
+    -e "s/profile_version: \"2026.06.1\"/profile_version: \"${TODAY}\"/" \
+    -e "s/owner: Acme AppSec Team/owner: ${E_OWNER}/" \
+    -e "s/label: \"Acme Corp AppSec Requirements\"/label: \"${E_LABEL}\"/" \
+    "${TEMPLATE_BASE}/org-profile/org-profile.yaml" > "${TARGET_DIR}/org-profile/org-profile.yaml"
+fi
 
 # ── Render organization.md ────────────────────────────────────────────────────
 
@@ -299,7 +324,12 @@ echo ""
 echo "Done. Your packaging repo is ready at: ${TARGET_DIR}"
 echo ""
 echo "Next steps:"
+if [ "${COPY_REQUIREMENTS}" = true ]; then
+echo "  1. Edit org-profile/requirements.yaml — replace example entries with your real requirements"
+echo "     When ready to host it centrally, update requirements_yaml_url in org-profile/org-profile.yaml"
+else
 echo "  1. Edit org-profile/org-profile.yaml — set your requirements URL and presets"
+fi
 echo "  2. Edit org-profile/context/organization.md — describe your org for analyses"
 echo "  3. Run: cd ${TARGET_DIR} && make package"
 echo "  4. Set up CI: make ci-github  or  make ci-gitlab"

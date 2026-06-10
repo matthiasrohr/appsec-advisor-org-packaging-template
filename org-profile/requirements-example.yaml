@@ -1,0 +1,91 @@
+# Example security requirements catalog for appsec-advisor.
+# Replace or extend these entries to match your organisation's AppSec standards.
+# Schema reference: https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/requirements.md
+#
+# NOTE: This is a local example file. To use it in production, host this file at
+# an accessible URL and point requirements.source.requirements_yaml_url in
+# org-profile.yaml to that URL.
+
+api_version: appsec-advisor.requirements/v1
+
+metadata:
+  label: "Acme Corp AppSec Requirements"
+  version: "2026.06.1"
+  owner: "Acme AppSec Team"
+
+requirements:
+  - id: REQ-AUTH-001
+    title: "Authentication must use MFA for all privileged actions"
+    category: authentication
+    severity: critical
+    description: >
+      All actions that modify sensitive data or access privileged resources
+      must require multi-factor authentication.
+    references:
+      - "OWASP ASVS 2.8"
+
+  - id: REQ-AUTH-002
+    title: "Passwords must be stored using a strong adaptive hash (bcrypt, Argon2)"
+    category: authentication
+    severity: critical
+    description: >
+      Plaintext or weakly-hashed passwords are not acceptable.
+      Use bcrypt (cost ≥ 12) or Argon2id.
+
+  - id: REQ-AUTHZ-001
+    title: "Enforce least-privilege access control on all API endpoints"
+    category: authorization
+    severity: high
+    description: >
+      Every API endpoint must verify that the caller holds the minimum required
+      permission. Default-deny; allow-list explicitly.
+
+  - id: REQ-INPUT-001
+    title: "All user-supplied input must be validated server-side"
+    category: input_validation
+    severity: high
+    description: >
+      Client-side validation alone is insufficient. Server-side validation
+      must reject unexpected types, lengths, and formats.
+
+  - id: REQ-INPUT-002
+    title: "Parameterised queries or ORMs must be used for all database access"
+    category: injection
+    severity: critical
+    description: >
+      String concatenation to build SQL (or NoSQL) queries is prohibited.
+      Use prepared statements or a query builder that handles escaping.
+
+  - id: REQ-SECRETS-001
+    title: "Secrets must not be committed to source control"
+    category: secrets_management
+    severity: critical
+    description: >
+      API keys, passwords, certificates, and tokens must be stored in a
+      secrets manager (e.g. Vault, AWS Secrets Manager) and injected at
+      runtime. Pre-commit hooks and CI scanning are required.
+
+  - id: REQ-CRYPTO-001
+    title: "TLS 1.2+ required; TLS 1.0 and 1.1 are prohibited"
+    category: cryptography
+    severity: high
+    description: >
+      All network communication must use TLS 1.2 or higher.
+      Deprecated cipher suites must be disabled.
+
+  - id: REQ-LOGGING-001
+    title: "Security-relevant events must be logged and forwarded to SIEM"
+    category: logging
+    severity: medium
+    description: >
+      Authentication attempts (success and failure), authorisation failures,
+      and data-modification events must be logged with timestamps and
+      forwarded to the centralised SIEM within 60 seconds.
+
+  - id: REQ-DEP-001
+    title: "Third-party dependencies must be scanned for known vulnerabilities"
+    category: supply_chain
+    severity: high
+    description: >
+      CI pipelines must run SCA (Software Composition Analysis) on every
+      build. Critical and high CVEs must block merges.
