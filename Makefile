@@ -2,7 +2,7 @@ APPSEC_ADVISOR_URL ?= https://github.com/matthiasrohr/appsec-advisor.git
 APPSEC_ADVISOR_REF ?= latest
 APPSEC_ADVISOR_DEST ?= upstream/appsec-advisor
 APPSEC_ADVISOR_SOURCE ?= $(APPSEC_ADVISOR_DEST)
-INTERNAL_NAME ?= example-appsec
+INTERNAL_NAME ?= acme-appsec
 VERSION ?= 0.4.0-local
 
 ifeq ($(APPSEC_ADVISOR_SOURCE),$(APPSEC_ADVISOR_DEST))

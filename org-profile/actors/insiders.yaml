@@ -1,8 +1,9 @@
-# Example company-specific actor. The upstream packager validates this file
-# through the actor resolver during package smoke tests and analysis runs.
+# Custom threat actors for Acme Corp. Add, edit, or delete entries as needed.
+# Each actor extends the plugin's default actor library for threat model analysis.
+# Schema reference: https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/org-profiles.md
 actors:
   - id: ACT-E-1
-    label: example-privileged-contractor
+    label: acme-privileged-contractor
     access:
       - internal-network
       - ci-cd-secrets

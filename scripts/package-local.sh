@@ -3,10 +3,10 @@ set -euo pipefail
 
 SOURCE="${APPSEC_ADVISOR_SOURCE:-}"
 DEST="${APPSEC_ADVISOR_DEST:-upstream/appsec-advisor}"
-INTERNAL_NAME="${INTERNAL_NAME:-example-appsec}"
+INTERNAL_NAME="${INTERNAL_NAME:-acme-appsec}"
 VERSION="${VERSION:-0.4.0-local}"
 ARCHIVE="${ARCHIVE:-0}"
-DESCRIPTION="${DESCRIPTION:-Internal packaged build of appsec-advisor with Example Corp defaults.}"
+DESCRIPTION="${DESCRIPTION:-Internal packaged build of appsec-advisor with Acme Corp defaults.}"
 
 if [ -z "${SOURCE}" ]; then
   scripts/fetch-upstream.sh

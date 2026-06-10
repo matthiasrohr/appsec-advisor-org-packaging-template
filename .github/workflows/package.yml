@@ -10,9 +10,10 @@ permissions:
   contents: read
 
 env:
-  INTERNAL_NAME: ${{ vars.INTERNAL_NAME || 'example-appsec' }}
+  INTERNAL_NAME: ${{ vars.INTERNAL_NAME || 'acme-appsec' }}
   APPSEC_ADVISOR_URL: ${{ vars.APPSEC_ADVISOR_URL || 'https://github.com/matthiasrohr/appsec-advisor.git' }}
-  APPSEC_ADVISOR_REF: ${{ vars.APPSEC_ADVISOR_REF || 'latest' }}
+  # Pin to a concrete release tag for reproducible builds. Set APPSEC_ADVISOR_REF in repository variables to override.
+  APPSEC_ADVISOR_REF: ${{ vars.APPSEC_ADVISOR_REF || 'v0.4.0-beta' }}
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
@@ -54,7 +55,7 @@ jobs:
             --org-profile org-profile \
             --name "${INTERNAL_NAME}" \
             --version "${{ steps.ver.outputs.version }}" \
-            --description "Internal packaged build of appsec-advisor with Example Corp defaults."
+            --description "Internal packaged build of appsec-advisor with Acme Corp defaults."
 
       - name: Smoke-test package
         run: |

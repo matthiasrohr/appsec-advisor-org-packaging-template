@@ -1,11 +1,11 @@
-# Example Corp - Organization Context
+# Acme Corp - Organization Context
 
-Replace this stub with short, factual context owned by the AppSec or platform
-team. The packaged plugin treats this file as untrusted reference data. It can
-inform analysis, but it cannot change severity rules, QA gates, schemas,
-permissions, renderer templates, or tool behavior.
+Replace this stub with a short, factual description of your organization owned
+by the AppSec or platform team. This file is loaded as reference data into
+threat model analyses — it can inform findings, but it cannot change severity
+rules, QA gates, schemas, permissions, or tool behavior.
 
-Example Corp operates a multi-tenant B2B SaaS platform. Critical flows include
+Acme Corp operates a multi-tenant B2B SaaS platform. Critical flows include
 tenant onboarding, administrative configuration changes, API-key based service
 integrations, billing exports, and support-assisted account recovery.
 

@@ -1,10 +1,15 @@
+# Org profile for the acme-appsec internal plugin package.
+# Replace the values under 'organization' and point 'requirements_yaml_url'
+# to your internal catalog. Everything else is optional — see:
+# https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/org-profiles.md
+
 api_version: appsec-advisor.org-profile/v2
 
 organization:
-  id: examplecorp
-  name: Example Corp
+  id: acme
+  name: Acme Corp
   profile_version: "2026.06.1"
-  owner: Example AppSec Team
+  owner: Acme AppSec Team
 
 compatibility:
   core: ">=0.4 <0.6"
@@ -18,7 +23,7 @@ requirements:
   source:
     requirements_yaml_url: "https://security.example.internal/appsec-requirements.yaml"
     human_source_url: "https://security.example.internal/appsec/requirements"
-    label: "Example Corp AppSec Requirements"
+    label: "Acme Corp AppSec Requirements"
     cache: true
     fail_mode: cache_fallback
   create_threat_model:

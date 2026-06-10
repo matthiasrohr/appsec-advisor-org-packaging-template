@@ -1,6 +1,8 @@
-# Build-time package surface policy. Prefer allowlists for internal packages so
-# newly added upstream skills or hooks do not appear until the AppSec team
-# reviews and explicitly allows them.
+# Build-time surface policy for the acme-appsec internal plugin package.
+# Uses an allowlist: only the skills and hooks listed here are included in the
+# built plugin. New upstream skills are excluded by default until explicitly added.
+# Full list of available skills and hooks:
+# https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/internal-plugin-packaging.md
 plugin_surface:
   skills:
     include:

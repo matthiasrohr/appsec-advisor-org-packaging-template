@@ -2,9 +2,10 @@ stages:
   - package
 
 variables:
-  INTERNAL_NAME: "example-appsec"
+  INTERNAL_NAME: "acme-appsec"
   APPSEC_ADVISOR_URL: "https://github.com/matthiasrohr/appsec-advisor.git"
-  APPSEC_ADVISOR_REF: "latest"
+  # Pin to a concrete release tag for reproducible builds. Override via CI/CD variables.
+  APPSEC_ADVISOR_REF: "v0.4.0-beta"
   VERSION: "0.4.0-internal.${CI_COMMIT_SHORT_SHA}"
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -25,7 +26,7 @@ package:
       --org-profile org-profile
       --name "$INTERNAL_NAME"
       --version "$VERSION"
-      --description "Internal packaged build of appsec-advisor with Example Corp defaults."
+      --description "Internal packaged build of appsec-advisor with Acme Corp defaults."
     - python3 upstream/appsec-advisor/scripts/smoke_test_package.py "build/${INTERNAL_NAME}" --name "${INTERNAL_NAME}"
   artifacts:
     name: "${INTERNAL_NAME}-${VERSION}"
