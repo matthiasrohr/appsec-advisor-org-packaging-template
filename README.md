@@ -43,7 +43,11 @@ Everything else (requirements catalog URL, context documents, custom actors, pre
 make package
 ```
 
-This fetches the upstream plugin, overlays your org profile, runs a smoke test, and writes the result to `build/your-plugin-name/`.
+This fetches the upstream plugin, overlays your org profile, runs a smoke test, and writes the result to `build/your-plugin-name/`. To force a clean rebuild from scratch (e.g. after upstream updates):
+
+```bash
+make rebuild
+```
 
 **5. Load it in Claude Code:**
 
@@ -82,6 +86,12 @@ make validate
 
 # Fetch upstream + build + smoke test
 make package
+
+# Force a clean rebuild (removes upstream/, build/, dist/ first)
+make rebuild
+
+# Remove all generated directories
+make clean
 
 # Pin a specific upstream release
 APPSEC_ADVISOR_REF=v0.4.0-beta make package

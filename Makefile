@@ -11,7 +11,7 @@ else
 FETCH_TARGET :=
 endif
 
-.PHONY: fetch-upstream validate package package-archive smoke ci-github ci-gitlab
+.PHONY: fetch-upstream validate package package-archive smoke ci-github ci-gitlab clean rebuild
 
 fetch-upstream:
 	APPSEC_ADVISOR_URL="$(APPSEC_ADVISOR_URL)" APPSEC_ADVISOR_REF="$(APPSEC_ADVISOR_REF)" APPSEC_ADVISOR_DEST="$(APPSEC_ADVISOR_DEST)" scripts/fetch-upstream.sh
@@ -27,6 +27,11 @@ package-archive: $(FETCH_TARGET)
 
 smoke: $(FETCH_TARGET)
 	python3 "$(APPSEC_ADVISOR_SOURCE)/scripts/smoke_test_package.py" "build/$(INTERNAL_NAME)" --name "$(INTERNAL_NAME)"
+
+clean:
+	rm -rf upstream/ build/ dist/
+
+rebuild: clean package
 
 ci-github:
 	mkdir -p .github/workflows
