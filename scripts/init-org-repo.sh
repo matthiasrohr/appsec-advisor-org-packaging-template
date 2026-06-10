@@ -26,6 +26,10 @@ slug() {
   echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//'
 }
 
+initials() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | tr -s '+&/., -' ' ' | sed 's/^ //;s/ $//' | awk '{for(i=1;i<=NF;i++) printf substr($i,1,1)}'
+}
+
 # Escape a string for safe use as a sed replacement (escapes & \ and /).
 sed_escape() {
   printf '%s' "$1" | sed 's/[&/\]/\\&/g'
@@ -43,16 +47,17 @@ echo ""
 # ── Gather input ─────────────────────────────────────────────────────────────
 
 ORG_NAME=$(ask "Organization name (e.g. Acme Corp)")
-ORG_ID=$(slug "${ORG_NAME}")
-ORG_ID=$(ask "Organization id (short lowercase, used in plugin name)" "${ORG_ID}")
+ORG_ID=$(initials "${ORG_NAME}")
+ORG_ID=$(ask "Organization id (short lowercase abbreviation, e.g. 'acme', 'hl' — used in plugin name)" "${ORG_ID}")
 PLUGIN_NAME=$(ask "Plugin name (Claude Code command prefix)" "${ORG_ID}-appsec")
-OWNER=$(ask "Team owner (e.g. AppSec Team)" "${ORG_NAME} AppSec Team")
-TARGET_DIR=$(ask "Target directory" "./${PLUGIN_NAME}-packaging")
+ORG_ABBREV=$(initials "${ORG_NAME}" | tr '[:lower:]' '[:upper:]')
+OWNER=$(ask "Team owner (e.g. AppSec Team)" "${ORG_ABBREV} AppSec Team")
+TARGET_DIR=$(ask "Target directory" "./${ORG_ID}-appsec-advisor")
 
-read -r -p "Copy example requirements.yaml into org-profile/? [y/N]: " _req_reply
-case "${_req_reply}" in
-  [yY]*) COPY_REQUIREMENTS=true ;;
-  *)     COPY_REQUIREMENTS=false ;;
+read -r -p "Include demo content (example requirements + filled org profile)? [y/N]: " _demo_reply
+case "${_demo_reply}" in
+  [yY]*) DEMO_CONTENT=true ;;
+  *)     DEMO_CONTENT=false ;;
 esac
 
 echo ""
@@ -107,7 +112,7 @@ cp "${TEMPLATE_BASE}/.gitignore" "${TARGET_DIR}/.gitignore"
 cp "${TEMPLATE_BASE}/org-profile/package-policy.yaml" \
    "${TARGET_DIR}/org-profile/package-policy.yaml"
 
-if [ "${COPY_REQUIREMENTS}" = true ]; then
+if [ "${DEMO_CONTENT}" = true ]; then
   cp "${TEMPLATE_BASE}/org-profile/requirements-example.yaml" \
      "${TARGET_DIR}/org-profile/requirements.yaml"
 fi
@@ -126,13 +131,13 @@ E_ORG_NAME=$(sed_escape "${ORG_NAME}")
 E_OWNER=$(sed_escape "${OWNER}")
 E_LABEL=$(sed_escape "${ORG_NAME} AppSec Requirements")
 
-if [ "${COPY_REQUIREMENTS}" = true ]; then
+if [ "${DEMO_CONTENT}" = true ]; then
   sed \
     -e "s/id: acme/id: ${E_ORG_ID}/" \
     -e "s/name: Acme Corp/name: ${E_ORG_NAME}/" \
     -e "s/profile_version: \"2026.06.1\"/profile_version: \"${TODAY}\"/" \
     -e "s/owner: Acme AppSec Team/owner: ${E_OWNER}/" \
-    -e "s|requirements_yaml_url: \"https://security.example.internal/appsec-requirements.yaml\"|requirements_yaml_url: \"file://org-profile/requirements.yaml\"|" \
+    -e "s|requirements_yaml_url: \"https://security.example.internal/appsec-requirements.yaml\"|requirements_yaml_url: \"org-profile/requirements.yaml\"|" \
     -e "s|human_source_url: \"https://security.example.internal/appsec/requirements\"|human_source_url: \"# TODO: add URL to hosted requirements catalog\"|" \
     -e "s/label: \"Acme Corp AppSec Requirements\"/label: \"${E_LABEL}\"/" \
     "${TEMPLATE_BASE}/org-profile/org-profile.yaml" > "${TARGET_DIR}/org-profile/org-profile.yaml"
@@ -142,7 +147,9 @@ else
     -e "s/name: Acme Corp/name: ${E_ORG_NAME}/" \
     -e "s/profile_version: \"2026.06.1\"/profile_version: \"${TODAY}\"/" \
     -e "s/owner: Acme AppSec Team/owner: ${E_OWNER}/" \
-    -e "s/label: \"Acme Corp AppSec Requirements\"/label: \"${E_LABEL}\"/" \
+    -e "/requirements_yaml_url:/d" \
+    -e "/human_source_url:/d" \
+    -e "/label: \"Acme Corp AppSec Requirements\"/d" \
     "${TEMPLATE_BASE}/org-profile/org-profile.yaml" > "${TARGET_DIR}/org-profile/org-profile.yaml"
 fi
 
@@ -178,123 +185,36 @@ sed \
 # ── Render README.md ──────────────────────────────────────────────────────────
 
 cat > "${TARGET_DIR}/README.md" <<EOF
-# ${PLUGIN_NAME} — Internal appsec-advisor Plugin
+# ${PLUGIN_NAME} — ${ORG_NAME} AppSec Plugin for Claude Code
 
-Internal packaging repo for the [\`appsec-advisor\`](https://github.com/matthiasrohr/appsec-advisor) Claude Code plugin, maintained by ${OWNER}.
+This is the internal Claude Code security plugin for ${ORG_NAME}, maintained by ${OWNER}.
+It runs automated threat models and security audits directly in your IDE, with ${ORG_NAME}
+security standards and requirements already baked in.
 
-Developers get a single command with ${ORG_NAME} defaults already baked in:
+## Getting Started
 
-\`\`\`text
-/${PLUGIN_NAME}:create-threat-model
-\`\`\`
-
-The upstream plugin code is fetched at build time — this repo contains only
-org-specific configuration and build scripts.
-
-## Quick Start
-
-**Prerequisites:** \`git\`, \`python3\` (3.10+), \`make\`
-
-**1. Set up CI for your platform** — run one of:
+Load the plugin in any repo:
 
 \`\`\`bash
-make ci-github   # copies ci-templates/github/workflows/package.yml → .github/workflows/
-make ci-gitlab   # copies ci-templates/gitlab-ci.yml → .gitlab-ci.yml
+claude --plugin-dir /path/to/build/${PLUGIN_NAME}
 \`\`\`
 
-**2. Edit your org profile** in \`org-profile/org-profile.yaml\` — three fields are required:
-- \`organization.id\` — short lowercase identifier, e.g. \`${ORG_ID}\`
-- \`organization.name\` — display name, e.g. \`${ORG_NAME}\`
-- \`organization.profile_version\` — a version string you control, e.g. \`2026.06.1\`
+## Commands
 
-Point \`requirements.source.requirements_yaml_url\` to your internal requirements catalog
-(or remove the block if you don't have one yet).
-
-**3. Build the plugin locally:**
-
-\`\`\`bash
-make package
-\`\`\`
-
-This fetches the upstream plugin, overlays your org profile, runs a smoke test, and
-writes the result to \`build/${PLUGIN_NAME}/\`. To force a clean rebuild:
-
-\`\`\`bash
-make rebuild
-\`\`\`
-
-**4. Load it in Claude Code:**
-
-\`\`\`bash
-claude --plugin-dir build/${PLUGIN_NAME}
-\`\`\`
-
-**5. Run your first threat model:**
-
-\`\`\`text
-/${PLUGIN_NAME}:check-permissions --update
-/${PLUGIN_NAME}:create-threat-model
-\`\`\`
-
-That's it. For CI, tagging a release triggers the pipeline set up in step 1 automatically.
-
-## Customization
-
-Beyond the quick start, these files are yours to edit:
-
-| File | Purpose |
+| Command | Description |
 |---|---|
-| \`org-profile/org-profile.yaml\` | Presets, cost guardrails, requirements source, output formats |
-| \`org-profile/context/organization.md\` | Short org context injected into analyses (max 50 KB) |
-| \`org-profile/actors/*.yaml\` | Custom threat actors for threat models — edit or delete |
-| \`org-profile/package-policy.yaml\` | Allowlist of which upstream skills and hooks to include |
-
-\`build/\`, \`dist/\`, and \`upstream/\` are all generated — do not commit them.
-
-## Build Reference
-
-\`\`\`bash
-# Validate org profile only
-make validate
-
-# Fetch upstream + build + smoke test
-make package
-
-# Force a clean rebuild (removes upstream/, build/, dist/ first)
-make rebuild
-
-# Remove all generated directories
-make clean
-
-# Pin a specific upstream release
-APPSEC_ADVISOR_REF=v0.4.0-beta make package
-
-# Build a distributable archive (.tgz + .sha256)
-ARCHIVE=1 VERSION=1.0.0 make package-archive
-
-# Use an existing local upstream checkout
-APPSEC_ADVISOR_SOURCE=/path/to/local/appsec-advisor make package
-\`\`\`
-
-## CI
-
-Run \`make ci-github\` or \`make ci-gitlab\` to install the CI pipeline (see Quick Start step 1).
-Both do the same as the local build: fetch upstream, build, smoke test, and upload the
-\`.tgz\` with its \`.sha256\` as a build artifact. The pipeline triggers on \`v*\` tags and
-\`workflow_dispatch\`.
-
-| Variable | Default | Description |
-|---|---|---|
-| \`APPSEC_ADVISOR_URL\` | upstream GitHub | Upstream repo or internal fork |
-| \`APPSEC_ADVISOR_REF\` | \`latest\` | Release tag, branch, or commit — pin for reproducible builds |
-| \`INTERNAL_NAME\` | \`${PLUGIN_NAME}\` | Plugin name and Claude Code command namespace |
-| \`VERSION\` | derived from git tag or commit SHA | Version of the produced package |
+| \`/${PLUGIN_NAME}:create-threat-model\` | Full threat model for your project, checked against ${ORG_NAME} security requirements |
+| \`/${PLUGIN_NAME}:audit-security-requirements\` | Audit the codebase against tagged ${ORG_NAME} requirements (e.g. \`[SEC-AUTH-001]\`) |
+| \`/${PLUGIN_NAME}:verify-requirements\` | Check your recent changes against ${ORG_NAME} security requirements |
+| \`/${PLUGIN_NAME}:threat-model-health\` | Quick health check — is the threat model current and complete? |
+| \`/${PLUGIN_NAME}:status\` | Show plugin version, available features, and last run info |
+| \`/${PLUGIN_NAME}:check-permissions --update\` | Verify and fix Claude Code permission setup (run once per repo) |
+| \`/${PLUGIN_NAME}:fix-run-issues\` | Fix errors from a previous run |
+| \`/${PLUGIN_NAME}:clean-run-state\` | Remove stale run state (use when a run got stuck) |
 
 ## Reference
 
-- [appsec-advisor upstream](https://github.com/matthiasrohr/appsec-advisor)
-- [docs/org-profiles.md](https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/org-profiles.md) — full org-profile.yaml reference
-- [docs/internal-plugin-packaging.md](https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/internal-plugin-packaging.md) — packaging runbook
+- [appsec-advisor](https://github.com/matthiasrohr/appsec-advisor) — upstream plugin
 EOF
 
 # ── Render package-local.sh with correct org name ─────────────────────────────
@@ -324,12 +244,13 @@ echo ""
 echo "Done. Your packaging repo is ready at: ${TARGET_DIR}"
 echo ""
 echo "Next steps:"
-if [ "${COPY_REQUIREMENTS}" = true ]; then
-echo "  1. Edit org-profile/requirements.yaml — replace example entries with your real requirements"
-echo "     When ready to host it centrally, update requirements_yaml_url in org-profile/org-profile.yaml"
+if [ "${DEMO_CONTENT}" = true ]; then
+echo "  1. Edit org-profile/requirements.yaml — replace demo entries with your real requirements"
+echo "     When ready to host it centrally, set requirements_yaml_url to an https:// URL in org-profile/org-profile.yaml"
 else
-echo "  1. Edit org-profile/org-profile.yaml — set your requirements URL and presets"
+echo "  1. Edit org-profile/org-profile.yaml — set requirements_yaml_url to your requirements catalog"
 fi
 echo "  2. Edit org-profile/context/organization.md — describe your org for analyses"
 echo "  3. Run: cd ${TARGET_DIR} && make package"
-echo "  4. Set up CI: make ci-github  or  make ci-gitlab"
+echo "  4. Load the plugin: claude --plugin-dir build/${PLUGIN_NAME}"
+echo "  5. Set up CI: make ci-github  or  make ci-gitlab"

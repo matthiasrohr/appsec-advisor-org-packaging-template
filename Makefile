@@ -11,7 +11,7 @@ else
 FETCH_TARGET :=
 endif
 
-.PHONY: fetch-upstream validate package package-archive smoke ci-github ci-gitlab clean rebuild
+.PHONY: fetch-upstream validate package package-archive smoke ci-github ci-gitlab clean distclean rebuild
 
 fetch-upstream:
 	APPSEC_ADVISOR_URL="$(APPSEC_ADVISOR_URL)" APPSEC_ADVISOR_REF="$(APPSEC_ADVISOR_REF)" APPSEC_ADVISOR_DEST="$(APPSEC_ADVISOR_DEST)" scripts/fetch-upstream.sh
@@ -30,6 +30,9 @@ smoke: $(FETCH_TARGET)
 
 clean:
 	rm -rf upstream/ build/ dist/
+
+distclean: clean
+	rm -rf ci-templates/ scripts/ AGENTS.md README.md Makefile
 
 rebuild: clean package
 

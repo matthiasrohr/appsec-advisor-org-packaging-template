@@ -3,6 +3,7 @@ set -euo pipefail
 
 SOURCE="${APPSEC_ADVISOR_SOURCE:-}"
 DEST="${APPSEC_ADVISOR_DEST:-upstream/appsec-advisor}"
+UPSTREAM_URL="${APPSEC_ADVISOR_URL:-https://github.com/matthiasrohr/appsec-advisor.git}"
 INTERNAL_NAME="${INTERNAL_NAME:-acme-appsec}"
 VERSION="${VERSION:-0.4.0-local}"
 ARCHIVE="${ARCHIVE:-0}"
@@ -30,6 +31,8 @@ python3 "${SOURCE}/scripts/package_internal_plugin.py" \
   --name "${INTERNAL_NAME}" \
   --version "${VERSION}" \
   --description "${DESCRIPTION}" \
+  --upstream-url "${UPSTREAM_URL}" \
+  --readme README.md \
   ${EXTRA_ARGS}
 
 python3 "${SOURCE}/scripts/smoke_test_package.py" \

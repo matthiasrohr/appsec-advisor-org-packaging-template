@@ -1,10 +1,9 @@
 # Example security requirements catalog for appsec-advisor.
-# Replace or extend these entries to match your organisation's AppSec standards.
+# Replace these demo entries with your organisation's real AppSec standards.
 # Schema reference: https://github.com/matthiasrohr/appsec-advisor/blob/main/docs/requirements.md
 #
-# NOTE: This is a local example file. To use it in production, host this file at
-# an accessible URL and point requirements.source.requirements_yaml_url in
-# org-profile.yaml to that URL.
+# To host this file centrally, upload it to an accessible URL and set
+# requirements.source.requirements_yaml_url in org-profile.yaml accordingly.
 
 api_version: appsec-advisor.requirements/v1
 
@@ -14,8 +13,8 @@ metadata:
   owner: "Acme AppSec Team"
 
 requirements:
-  - id: REQ-AUTH-001
-    title: "Authentication must use MFA for all privileged actions"
+  - id: SEC-AUTH-001
+    title: "MFA required for all privileged actions"
     category: authentication
     severity: critical
     description: >
@@ -24,39 +23,49 @@ requirements:
     references:
       - "OWASP ASVS 2.8"
 
-  - id: REQ-AUTH-002
-    title: "Passwords must be stored using a strong adaptive hash (bcrypt, Argon2)"
+  - id: SEC-AUTH-002
+    title: "Passwords must be stored using a strong adaptive hash"
     category: authentication
     severity: critical
     description: >
-      Plaintext or weakly-hashed passwords are not acceptable.
-      Use bcrypt (cost ≥ 12) or Argon2id.
+      Use bcrypt (cost ≥ 12) or Argon2id. Plaintext or MD5/SHA1-hashed
+      passwords are not acceptable.
 
-  - id: REQ-AUTHZ-001
-    title: "Enforce least-privilege access control on all API endpoints"
+  - id: SEC-AUTHZ-001
+    title: "Enforce least-privilege on all API endpoints"
     category: authorization
     severity: high
     description: >
-      Every API endpoint must verify that the caller holds the minimum required
+      Every API endpoint must verify the caller holds the minimum required
       permission. Default-deny; allow-list explicitly.
 
-  - id: REQ-INPUT-001
+  - id: SEC-AUTHZ-002
+    title: "Broken object-level authorisation (BOLA) checks required"
+    category: authorization
+    severity: critical
+    description: >
+      Every resource access must verify that the authenticated user owns or
+      has explicit permission for the requested object. Never trust client-supplied IDs alone.
+    references:
+      - "OWASP API Security Top 10: API1"
+
+  - id: SEC-INPUT-001
+    title: "Parameterised queries required for all database access"
+    category: injection
+    severity: critical
+    description: >
+      String concatenation to build SQL or NoSQL queries is prohibited.
+      Use prepared statements or an ORM that handles escaping.
+
+  - id: SEC-INPUT-002
     title: "All user-supplied input must be validated server-side"
     category: input_validation
     severity: high
     description: >
       Client-side validation alone is insufficient. Server-side validation
-      must reject unexpected types, lengths, and formats.
+      must reject unexpected types, lengths, and formats before processing.
 
-  - id: REQ-INPUT-002
-    title: "Parameterised queries or ORMs must be used for all database access"
-    category: injection
-    severity: critical
-    description: >
-      String concatenation to build SQL (or NoSQL) queries is prohibited.
-      Use prepared statements or a query builder that handles escaping.
-
-  - id: REQ-SECRETS-001
+  - id: SEC-SECRETS-001
     title: "Secrets must not be committed to source control"
     category: secrets_management
     severity: critical
@@ -65,27 +74,27 @@ requirements:
       secrets manager (e.g. Vault, AWS Secrets Manager) and injected at
       runtime. Pre-commit hooks and CI scanning are required.
 
-  - id: REQ-CRYPTO-001
-    title: "TLS 1.2+ required; TLS 1.0 and 1.1 are prohibited"
+  - id: SEC-CRYPTO-001
+    title: "TLS 1.2+ required; TLS 1.0 and 1.1 prohibited"
     category: cryptography
     severity: high
     description: >
       All network communication must use TLS 1.2 or higher.
-      Deprecated cipher suites must be disabled.
+      Deprecated cipher suites (RC4, 3DES) must be disabled.
 
-  - id: REQ-LOGGING-001
+  - id: SEC-LOGGING-001
     title: "Security-relevant events must be logged and forwarded to SIEM"
     category: logging
     severity: medium
     description: >
-      Authentication attempts (success and failure), authorisation failures,
-      and data-modification events must be logged with timestamps and
-      forwarded to the centralised SIEM within 60 seconds.
+      Authentication attempts, authorisation failures, and data-modification
+      events must be logged with timestamps and forwarded to the SIEM within
+      60 seconds.
 
-  - id: REQ-DEP-001
+  - id: SEC-DEP-001
     title: "Third-party dependencies must be scanned for known vulnerabilities"
     category: supply_chain
     severity: high
     description: >
-      CI pipelines must run SCA (Software Composition Analysis) on every
-      build. Critical and high CVEs must block merges.
+      CI pipelines must run SCA on every build. Critical and high CVEs must
+      block merges to the main branch.

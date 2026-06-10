@@ -29,20 +29,65 @@ else
   git -C "${DEST}" remote add origin "${URL}"
 fi
 
+_ask_yn() {
+  [ -t 0 ] || return 1
+  read -r -p "$1 [y/N] " _answer || return 1
+  case "${_answer}" in [yY]*) return 0 ;; *) return 1 ;; esac
+}
+
+_use_trunk() {
+  echo "==> Fetching trunk (default branch) from ${URL}"
+  git -C "${DEST}" fetch --depth 1 origin HEAD
+  git -C "${DEST}" checkout --detach FETCH_HEAD
+  echo "==> Upstream ready at ${DEST} (trunk): $(git -C "${DEST}" rev-parse --short HEAD)"
+  exit 0
+}
+
+_latest_tag() {
+  git -C "${DEST}" ls-remote --tags --refs origin 'v[0-9]*' |
+    awk -F/ '{print $NF}' |
+    sort -V |
+    tail -n 1
+}
+
 if [ "${REF}" = "latest" ]; then
-  RESOLVED_REF="$(
-    git -C "${DEST}" ls-remote --tags --refs origin 'v[0-9]*' |
-      awk -F/ '{print $NF}' |
-      sort -V |
-      tail -n 1
-  )"
+  RESOLVED_REF="$(_latest_tag)"
   if [ -z "${RESOLVED_REF}" ]; then
-    echo "ERROR: could not resolve latest appsec-advisor release tag from ${URL}" >&2
+    echo "WARN: no release tags found in ${URL}" >&2
+    if _ask_yn "No release tags found. Use trunk (default branch) instead?"; then
+      _use_trunk
+    fi
+    echo "ERROR: no release tags found and trunk was declined" >&2
     exit 2
   fi
   echo "==> Resolved APPSEC_ADVISOR_REF=latest to ${RESOLVED_REF}"
 else
-  RESOLVED_REF="${REF}"
+  TAG_EXISTS="$(git -C "${DEST}" ls-remote --tags --refs origin "refs/tags/${REF}")"
+  BRANCH_EXISTS="$(git -C "${DEST}" ls-remote --heads origin "refs/heads/${REF}")"
+  if [ -z "${TAG_EXISTS}" ] && [ -z "${BRANCH_EXISTS}" ]; then
+    echo "WARN: ref '${REF}' not found in ${URL}" >&2
+    LATEST_TAG="$(_latest_tag)"
+    if [ -n "${LATEST_TAG}" ]; then
+      if _ask_yn "Latest available release is '${LATEST_TAG}'. Use that instead?"; then
+        RESOLVED_REF="${LATEST_TAG}"
+        echo "==> Using latest release ${RESOLVED_REF}"
+      elif _ask_yn "Use trunk (default branch) instead?"; then
+        _use_trunk
+      else
+        echo "ERROR: ref '${REF}' not found and no alternative was chosen" >&2
+        exit 2
+      fi
+    else
+      if _ask_yn "No release tags found either. Use trunk (default branch) instead?"; then
+        _use_trunk
+      else
+        echo "ERROR: ref '${REF}' not found and no release tags exist" >&2
+        exit 2
+      fi
+    fi
+  else
+    RESOLVED_REF="${REF}"
+  fi
 fi
 
 if git -C "${DEST}" ls-remote --exit-code --tags origin "refs/tags/${RESOLVED_REF}" >/dev/null 2>&1; then
