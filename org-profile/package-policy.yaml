@@ -1,0 +1,17 @@
+# Build-time package surface policy. Prefer allowlists for internal packages so
+# newly added upstream skills or hooks do not appear until the AppSec team
+# reviews and explicitly allows them.
+plugin_surface:
+  skills:
+    include:
+      - create-threat-model
+      - audit-security-requirements
+      - verify-requirements
+      - status
+      - check-permissions
+      - clean-run-state
+      - fix-run-issues
+      - threat-model-health
+  hooks:
+    include:
+      - agent-logger

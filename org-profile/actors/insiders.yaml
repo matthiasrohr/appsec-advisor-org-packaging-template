@@ -1,0 +1,18 @@
+# Example company-specific actor. The upstream packager validates this file
+# through the actor resolver during package smoke tests and analysis runs.
+actors:
+  - id: ACT-E-1
+    label: example-privileged-contractor
+    access:
+      - internal-network
+      - ci-cd-secrets
+      - staging-env
+    capabilities:
+      sophistication: medium
+      dwell_time: weeks
+      surface_reach:
+        - local
+        - lateral
+    motivation: financial
+    heatmap_slug: repo-read
+    description: External contractor with temporary elevated access.

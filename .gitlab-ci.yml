@@ -1,0 +1,35 @@
+stages:
+  - package
+
+variables:
+  INTERNAL_NAME: "example-appsec"
+  APPSEC_ADVISOR_URL: "https://github.com/matthiasrohr/appsec-advisor.git"
+  APPSEC_ADVISOR_REF: "latest"
+  VERSION: "0.4.0-internal.${CI_COMMIT_SHORT_SHA}"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+default:
+  image: python:3.11-slim
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+    - pip install --quiet pyyaml jsonschema packaging
+
+package:
+  stage: package
+  script:
+    - scripts/fetch-upstream.sh
+    - >
+      python3 upstream/appsec-advisor/scripts/package_internal_plugin.py
+      --source upstream/appsec-advisor
+      --org-profile org-profile
+      --name "$INTERNAL_NAME"
+      --version "$VERSION"
+      --description "Internal packaged build of appsec-advisor with Example Corp defaults."
+    - python3 upstream/appsec-advisor/scripts/smoke_test_package.py "build/${INTERNAL_NAME}" --name "${INTERNAL_NAME}"
+  artifacts:
+    name: "${INTERNAL_NAME}-${VERSION}"
+    paths:
+      - "dist/${INTERNAL_NAME}-${VERSION}.tgz"
+      - "dist/${INTERNAL_NAME}-${VERSION}.tgz.sha256"
+    expire_in: 30 days
