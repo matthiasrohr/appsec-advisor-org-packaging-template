@@ -72,8 +72,14 @@ fi
 # ── Create repo ───────────────────────────────────────────────────────────────
 
 if [ -e "${TARGET_DIR}" ]; then
-  echo "ERROR: '${TARGET_DIR}' already exists." >&2
-  exit 1
+  echo ""
+  echo "Warning: '${TARGET_DIR}' already exists. Files will be written into it."
+  read -r -p "Continue? [y/N]: " confirm
+  case "${confirm}" in
+    [yY]*) ;;
+    *) echo "Aborted."; exit 1 ;;
+  esac
+  echo ""
 fi
 
 mkdir -p \
